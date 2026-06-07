@@ -1,0 +1,6 @@
+{
+  "name": "honeybee",
+  "description": "A premium honeycomb-themed dating and community app with matching, verification, feeds, live chats, and interactive video/audio calling.",
+  "requestFramePermissions": ["camera", "microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

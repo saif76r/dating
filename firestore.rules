@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Users ---
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isValidId(userId)
+                    && incoming().id == userId
+                    && incoming().displayName is string && incoming().displayName.size() <= 100
+                    && incoming().email is string && incoming().email.size() <= 200;
+      allow update: if isValidId(userId)
+                    && incoming().id == userId
+                    && incoming().displayName is string && incoming().displayName.size() <= 100;
+      allow delete: if false;
+    }
+
+    // --- Posts ---
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if isValidId(postId)
+                    && incoming().userId is string
+                    && isValidId(incoming().userId)
+                    && incoming().content is string && incoming().content.size() <= 2000;
+      allow update: if isValidId(postId)
+                    && incoming().userId is string
+                    && isValidId(incoming().userId)
+                    && incoming().content is string && incoming().content.size() <= 2000;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // --- Comments on Posts ---
+    match /posts/{postId}/comments/{commentId} {
+      allow read: if true;
+      allow create: if isValidId(commentId)
+                    && incoming().userId is string
+                    && isValidId(incoming().userId)
+                    && incoming().postId == postId
+                    && incoming().content is string && incoming().content.size() <= 1000;
+      allow delete: if isSignedIn() && (resource.data.userId == request.auth.uid || get(/databases/$(database)/documents/posts/$(postId)).data.userId == request.auth.uid);
+    }
+
+    // --- Chats ---
+    match /chats/{chatId} {
+      allow read: if isSignedIn() && (request.auth.uid in resource.data.participants);
+      allow create: if isSignedIn()
+                    && isValidId(chatId)
+                    && (request.auth.uid in incoming().participants);
+      allow update: if isSignedIn()
+                    && (request.auth.uid in resource.data.participants)
+                    && (request.auth.uid in incoming().participants);
+      allow delete: if false;
+    }
+
+    // --- Live Call Signaling ---
+    match /calls/{callId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+                    && isValidId(callId)
+                    && incoming().participants is list
+                    && request.auth.uid in incoming().participants;
+      allow update: if isSignedIn()
+                    && request.auth.uid in resource.data.participants;
+      allow delete: if false;
+    }
+
+    // --- Messages in Chats ---
+    match /chats/{chatId}/messages/{messageId} {
+      allow read: if isSignedIn() && (
+                    (chatId.matches('.*' + request.auth.uid + '.*'))
+                    || (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants)
+                  );
+      allow create: if isSignedIn()
+                    && isValidId(messageId)
+                    && (
+                      (chatId.matches('.*' + request.auth.uid + '.*'))
+                      || (request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants)
+                    )
+                    && (incoming().senderId == request.auth.uid || incoming().senderId == "system" || (incoming().senderId is string && incoming().senderId.matches('^bot_[a-zA-Z0-9_\\-]+$')))
+                    && incoming().text is string && incoming().text.size() <= 5000;
+      allow update, delete: if false;
+    }
+  }
+}

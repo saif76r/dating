@@ -1,0 +1,110 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with interests, personality, and matching configuration.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "bio": { "type": "string" },
+        "interests": { "type": "array" },
+        "personality": { "type": "string" },
+        "isVerified": { "type": "boolean" },
+        "verificationSelfie": { "type": "string" },
+        "verificationStatus": { "type": "string" },
+        "location": { "type": "string" },
+        "age": { "type": "number" },
+        "gender": { "type": "string" },
+        "lookingFor": { "type": "string" },
+        "likes": { "type": "array" },
+        "dislikes": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "displayName", "email"]
+    },
+    "Post": {
+      "title": "Community Post",
+      "description": "A post shared by a user to the public feed.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "userVerified": { "type": "boolean" },
+        "content": { "type": "string" },
+        "mediaUrl": { "type": "string" },
+        "likes": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "content", "createdAt"]
+    },
+    "Comment": {
+      "title": "Post Comment",
+      "description": "A comment left on a user feed post.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "postId", "userId", "content", "createdAt"]
+    },
+    "Chat": {
+      "title": "Chat Thread",
+      "description": "A chat space between matched users.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "participants": { "type": "array" },
+        "lastMessage": { "type": "string" },
+        "lastMessageAt": { "type": "string" }
+      },
+      "required": ["id", "participants"]
+    },
+    "Message": {
+      "title": "Chat Message",
+      "description": "An individual message within a thread.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "callType": { "type": "string" },
+        "callDuration": { "type": "number" }
+      },
+      "required": ["id", "senderId", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles database."
+    },
+    "/posts/{postId}": {
+      "schema": "Post",
+      "description": "Database of shared feed posts."
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments attached to feed posts."
+    },
+    "/chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Dating match conversations thread."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Conversation messages."
+    }
+  }
+}
